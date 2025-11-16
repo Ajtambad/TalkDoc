@@ -28,6 +28,8 @@ export default function DocumentFillerApp() {
     setIsLoading(true);
     const formData = new FormData();
     formData.append('file', file);
+    console.log("Backend URL =", process.env.NEXT_PUBLIC_BACKEND_URL);
+
 
     try {
       // Replace with your actual backend URL
