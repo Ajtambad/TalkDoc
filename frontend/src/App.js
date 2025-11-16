@@ -31,7 +31,7 @@ export default function DocumentFillerApp() {
 
     try {
       // Replace with your actual backend URL
-      const response = await fetch(backend_url + '/uploadfile/', {
+      const response = await fetch(backend_url + 'uploadfile/', {
         method: 'POST',
         body: formData,
       });
