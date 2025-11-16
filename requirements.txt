@@ -5,3 +5,4 @@ openai
 pydantic
 asyncio
 dotenv
+python-multipart
