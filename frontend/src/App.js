@@ -10,7 +10,7 @@ export default function DocumentFillerApp() {
   const [downloadUrl, setDownloadUrl] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
-  const backend_url = process.env.NEXT_PUBLIC_BACKEND_URL
+  const backend_url = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 
   const scrollToBottom = () => {
