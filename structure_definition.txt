@@ -1,0 +1,33 @@
+session = {
+    "document":
+    "placeholders":
+    "placeholder_to_paragraph":
+    "conversational_history":
+    "collected_data"
+    "current_state":
+}
+
+current_state - 
+    initial (when placeholders have been collected and first question needs to be asked)
+    collecting (when LLM is asking questions about placeholders)        
+    clarifying - Confirming/Checking that the user response is appropriate and asking follow up questions if something seems off
+    complete - All info collected. Need to generate filled document
+
+
+
+                        frontend
+                            |
+                            |
+   chat                    upload_document <-> compile_placeholders <-> extract_placeholders
+    |
+    |---------------> generate_first_question -> chat -> add_to_history
+                                                 |    | 
+                                                 |    |    |<->analyze_user_response
+                                                 |    |
+                                                 |    |<-> update_field
+                                                 |    |
+                                                 |    |-> generate_questions_with_context ---------->|
+                                                 |    |                                              |
+                                                 |    |-> download_document (if state is completed)  |                                  
+                                                 |                                                   |
+                                                 |<-------------------------------------------------<|               
