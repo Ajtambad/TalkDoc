@@ -10,7 +10,7 @@ export default function DocumentFillerApp() {
   const [downloadUrl, setDownloadUrl] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
-  const backend_url = process.env.backend_url
+  const backend_url = process.env.NEXT_PUBLIC_BACKEND_URL
 
 
   const scrollToBottom = () => {
@@ -31,7 +31,7 @@ export default function DocumentFillerApp() {
 
     try {
       // Replace with your actual backend URL
-      const response = await fetch(backend_url + 'uploadfile/', {
+      const response = await fetch(`${backend_url}uploadfile/`, {
         method: 'POST',
         body: formData,
       });
@@ -56,7 +56,7 @@ export default function DocumentFillerApp() {
 
     try {
       // Replace with your actual backend URL
-      const response = await fetch(backend_url + `chat/?session_id=${sessionId}`, {
+      const response = await fetch(`${backend_url}chat/?session_id=${sessionId}`, {
         method: 'POST',
       });
 
@@ -64,7 +64,7 @@ export default function DocumentFillerApp() {
       
       if (data.completed || data.message.includes('ready for download')) {
         setIsComplete(true);
-        setDownloadUrl(backend_url + `download/${sessionId}`);
+        setDownloadUrl(`${backend_url}download/${sessionId}`);
       }
 
       setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
