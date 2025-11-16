@@ -10,7 +10,7 @@ export default function DocumentFillerApp() {
   const [downloadUrl, setDownloadUrl] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
-  const backend_url = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const backend_url = process.env.REACT_APP_BACKEND_URL;
 
 
   const scrollToBottom = () => {
@@ -29,7 +29,7 @@ export default function DocumentFillerApp() {
     const formData = new FormData();
     formData.append('file', file);
     console.log("ENV:", process.env);
-    console.log("Backend URL =", process.env.NEXT_PUBLIC_BACKEND_URL);
+    console.log("Backend URL =", backend_url);
 
 
     try {
