@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+Spire.Doc
+openai
+pydantic
+asyncio
