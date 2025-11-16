@@ -4,3 +4,4 @@ Spire.Doc
 openai
 pydantic
 asyncio
+dotenv
