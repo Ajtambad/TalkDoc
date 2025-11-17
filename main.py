@@ -15,7 +15,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-FRONTEND_URL = os.getenv("FRONTEND_URL")
+FRONTEND_URL = os.getenv("REACT_APP_FRONTEND_URL")
+BACKEND_URL = os.getenv('BACKEND_URL')
+
+origins = [FRONTEND_URL, BACKEND_URL]
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -25,7 +28,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -45,11 +48,9 @@ class ResponseFormat(BaseModel):
 
 
 def create_session(document):
-
     with open('v4_uuids.txt') as f:
-        session_id = str(random.choice(f.readlines()))
+        session_id = str(random.choice(f.readlines()).strip())
 
-    print(session_id)
     placeholders = []
 
     sessions[session_id] = {
@@ -117,6 +118,7 @@ def update_field(session_id: str, field_update: str, index: int):
     print(f"Pre updated Paragraph: {paragraph.Text}")
     # paragraph.Text = paragraph.Text.replace(placeholder_text, str(user_response))
     paragraph.Replace(placeholder_text, str(user_response), False, False)
+    document.Sections[section_idx].Paragraphs[paragraph_idx].Text = paragraph.Text
     print(f"Updated Paragraph: {paragraph.Text}")
     return
 
@@ -281,8 +283,8 @@ async def compile_placeholders(client, document):
     for response, section_idx, paragraph_idx in results:
         for placeholder in response.output_parsed.placeholders:
             if placeholder.placeholder_text:
-                print(placeholder)
                 placeholders.append({"placeholder_text": placeholder.placeholder_text, "context": placeholder.context, "section_idx": int(section_idx), "paragraph_idx": int(paragraph_idx) })
+
 
     return placeholders
 
@@ -290,6 +292,7 @@ async def compile_placeholders(client, document):
 async def chat(session_id: str, data: ChatRequest):
     user_response, index = data.user_response, data.index
 
+    print(user_response, index)
     if sessions[session_id]["current_state"] == "collecting":
         add_to_history(session_id, user_response)
         action, field_update = await analyze_user_response(session_id)

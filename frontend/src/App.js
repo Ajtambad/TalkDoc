@@ -10,8 +10,9 @@ export default function DocumentFillerApp() {
   const [downloadUrl, setDownloadUrl] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
-  const backend_url = process.env.REACT_APP_BACKEND_URL;
-
+  // const backend_url = process.env.REACT_APP_BACKEND_URL;
+  const backend_url = "http://127.0.0.1:8000/";
+  const [index, setIndex] = useState(0);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -60,11 +61,20 @@ export default function DocumentFillerApp() {
     try {
       // Replace with your actual backend URL
       const response = await fetch(`${backend_url}chat/?session_id=${sessionId}`, {
-        method: 'POST',
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          user_response: userMessage,
+          index: index
+        })
+
       });
 
       const data = await response.json();
-      
+      setIndex(data.next_index)
+
       if (data.completed || data.message.includes('ready for download')) {
         setIsComplete(true);
         setDownloadUrl(`${backend_url}download/${sessionId}`);
