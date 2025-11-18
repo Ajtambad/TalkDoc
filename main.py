@@ -6,6 +6,8 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 import os
+from io import BytesIO
+from fastapi.responses import StreamingResponse
 from tempfile import NamedTemporaryFile
 import json
 import asyncio
@@ -126,7 +128,7 @@ def update_field(session_id: str, field_update: str, index: int):
 @app.get("/download/{session_id}")
 async def download_document(session_id: str):
 
-    file_path = f"updated_document.docx"
+    file_path = f"/tmp/updated_document.docx"
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
     
@@ -135,6 +137,12 @@ async def download_document(session_id: str):
         filename = f"updated_document_{session_id}",
         media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
+    # document = sessions[session_id]["document"]
+    # buffer = BytesIO()
+    # document.save(buffer)
+    # buffer.seek(0)
+    # return StreamingResponse(buffer, media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
 
 @app.get("/")
 async def root():
@@ -310,5 +318,5 @@ async def chat(session_id: str, data: ChatRequest):
     
     if sessions[session_id]["current_state"] == "complete":
         document = sessions[session_id]["document"]
-        document.SaveToFile("updated_document.docx", FileFormat.Docx)      
+        document.SaveToFile("/tmp/updated_document.docx", FileFormat.Docx)      
         return {"completed": True, "message": "File is ready for download", "next_index": index}

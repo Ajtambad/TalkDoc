@@ -10,8 +10,8 @@ export default function DocumentFillerApp() {
   const [downloadUrl, setDownloadUrl] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
-  const backend_url = process.env.REACT_APP_BACKEND_URL;
-  // const backend_url = "http://127.0.0.1:8000/";
+  // const backend_url = process.env.REACT_APP_BACKEND_URL;
+  const backend_url = "http://127.0.0.1:8000/";
   const [index, setIndex] = useState(0);
 
   const scrollToBottom = () => {
