@@ -103,7 +103,8 @@ export default function DocumentFillerApp() {
           <div className="flex items-center justify-center mb-4">
             <FileText className="w-12 h-12 text-orange-600" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">AI Document Assistant</h1>
+          {/* <h1 className="text-4xl font-bold text-gray-800 mb-2">TalkDocAI</h1> */}
+          <h1 className="text-4xl font-bold text-[#ff002b] mb-2">TalkDocAI</h1>
           <p className="text-gray-600">Upload your document and let AI guide you through filling it</p>
         </div>
 
