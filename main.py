@@ -87,10 +87,11 @@ async def analyze_user_response(session_id):
     Make sure the field_name is the placeholder we are looking to fill.
     Determine the action field based on the following scenarios:
 
-    1. If the answer is appropriate for the question asked and can help with filling the appropriate placeholder, mark action as "next_field"
-    2. If the answer seems incorrect or inappropriate or if there are ambiguities and more questions need to be asked for better clarity, mark action as "clarify" and mark field_name within field_update as null
-    3. If the user indicates the current field is not actually a placeholder or shouldn't be filled, mark action as "skip" and mark field_name within field_update as null
-    4. Make sure the json format specified is followed accurately. 
+    1. If the answer is appropriate for the question asked and can help with filling the current placeholder, mark action as "next_field".
+    2. If the user is asked to confirm the answer for a field which has appeared before and the user confirms that it is the same answer, mark action as "next_field"
+    3. If the answer seems incorrect or inappropriate, or if there are ambiguities and more questions need to be asked for better clarity, mark action as "clarify" and mark field_name within field_update as null
+    4. If the user indicates the current field is not actually a placeholder, mark action as "skip" and mark field_name within field_update as null
+    5. Make sure the json format specified is followed accurately. 
     """
 
     llm_response = client.chat.completions.create(
@@ -117,6 +118,7 @@ def update_field(session_id: str, field_update: str, index: int):
     section_idx, paragraph_idx = sessions[session_id]["placeholders"][index]["section_idx"], sessions[session_id]["placeholders"][index]["paragraph_idx"]
     paragraph = document.Sections[section_idx].Paragraphs[paragraph_idx]
     placeholder_text, user_response = sessions[session_id]["placeholders"][index]["placeholder_text"], field_update["value"]
+    print(placeholder_text, field_update)
     print(f"Pre updated Paragraph: {paragraph.Text}")
     # paragraph.Text = paragraph.Text.replace(placeholder_text, str(user_response))
     paragraph.Replace(placeholder_text, str(user_response), False, False)
@@ -137,11 +139,6 @@ async def download_document(session_id: str):
         filename = f"updated_document_{session_id}",
         media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
-    # document = sessions[session_id]["document"]
-    # buffer = BytesIO()
-    # document.save(buffer)
-    # buffer.seek(0)
-    # return StreamingResponse(buffer, media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
 
 @app.get("/")
@@ -164,7 +161,7 @@ async def upload_file(file: UploadFile = File(...)):
     os.remove(tmp_path)
 
     session_id = create_session(document) #Create a new session and get the session ID.
-    print(f"session_id: {session_id}")
+    # print(f"session_id: {session_id}")
     sessions[session_id]["placeholders"] = await compile_placeholders(client, document) #Extract placeholders and store in session.
     
     if sessions[session_id]["placeholders"]:
@@ -216,6 +213,12 @@ async def generate_questions_with_context(session_id, action, index):
     collected_data = sessions[session_id]["collected_data"]
     conversation_history = sessions[session_id]["conversation_history"]
 
+    document = sessions[session_id]["document"]
+    section_idx =  sessions[session_id]["placeholders"][index]["section_idx"]
+    paragraph_idx = sessions[session_id]["placeholders"][index]["paragraph_idx"]
+    paragraph = document.Sections[section_idx].Paragraphs[paragraph_idx]
+
+
     prompt = f""" 
             You are an intelligent legal document assistant helping users fill out a document with placeholders.
             Generate a question based on the placeholder and the context provided. Refer to the following guidelines: 
@@ -228,16 +231,16 @@ async def generate_questions_with_context(session_id, action, index):
             Already collected: {collected_data}
             Conversation so far: {conversation_history}
             action to be taken based on analysis of user's answer: {action}
-            current placeholder to ask the question about: {placeholders[index]["placeholder_text"]}
                                 
             Based on the user's last message and the action determined after user response analysis, make one of these decisions:
-            1. If action says "clarify" - ask follow-up questions, point out if the answer feels incorrect/inappropriate or provide more information if the user has asked for clarity. Determine your response based on context from all the data being provided to you.
+            1. If action says "clarify" - ask follow-up questions, point out if the answer is not related to the question or is invalid (Ex - You ask for an amount and they give a name instead) or provide more information if the user has asked for clarity. Make use of context and the paragraph to provide additional context. 
             2. If action says "next_field", acknowledge and ask questions about the placeholder being passed currently. Take help of the all the information being provided to frame your question.
 
             In terms of asking questions, follow these guidelines:
             - The question should be asked with the intent to fill in the placeholder.  
             - Make sure to reference the placeholder in the question so the user knows which placeholder is being referred to.
-            - Make sure you ask the question ONLY about the placeholder in question, especially if there are multiple placeholders in that particular paragraph. Provide additional context if asked. 
+            - Check if the current placeholder in question has already been answered by the user, by looking at the conversation history and collected data. If it's already present, just confirm with the user by asking if it's correct. 
+            - Make sure you ask the question ONLY about the current placeholder in question, especially if there are multiple placeholders in that particular paragraph. Provide additional context if asked. 
             """
 
     question = client.chat.completions.create(
@@ -246,7 +249,7 @@ async def generate_questions_with_context(session_id, action, index):
             {"role": "system", "content": prompt},
             {
                 "role": "user",
-                "content": f"Placeholder: {placeholders[index]["placeholder_text"]}\nContext: {placeholders[index]["context"]}",
+                "content": f"Current placeholder: {placeholders[index]["placeholder_text"]}\nContext: {placeholders[index]["context"]}\nParagraph: {paragraph}",
             },
         ],
     )
@@ -260,7 +263,7 @@ async def extract_placeholders(client, paragraph, section_idx, paragraph_idx):
     response = client.responses.parse(
                 model="gpt-5-mini",
                 input=[
-                    {"role": "system", "content": "Extract the placeholders from the text and provide surrounding context (the sentence containing the placeholder. Use as much around it as necessary). If there are no placeholders, return empty string for placeholder_text. Placeholders are generally of the 'form ____', '[text]', 'text:_______', 'text:   ', etc. Do not mistake normal text for placeholders. When in doubt, assume something is a placeholder."},
+                    {"role": "system", "content": "Extract the placeholders accurately from the text and provide surrounding context (the sentence containing the placeholder. Use as much around it as necessary). If there are no placeholders, return empty string for placeholder_text. Placeholders are generally of the form ' ____ ', '[text]', 'text:_______', 'text:   ', etc. Do not mistake normal text for placeholders. When in doubt, assume something is a placeholder."},
                     {
                         "role": "user",
                         "content": paragraph.Text,
@@ -300,7 +303,7 @@ async def compile_placeholders(client, document):
 async def chat(session_id: str, data: ChatRequest):
     user_response, index = data.user_response, data.index
 
-    print(user_response, index)
+    # print(user_response, index)
     if sessions[session_id]["current_state"] == "collecting":
         add_to_history(session_id, user_response)
         action, field_update = await analyze_user_response(session_id)
