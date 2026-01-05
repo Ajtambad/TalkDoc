@@ -1,5 +1,9 @@
 # TalkDocAI
-AI assisted document filler. Check it out here - https://talkdoc-ai.vercel.app/
+AI assisted document filler.
+
+Blog - https://medium.com/@amoghtambad/talkdocai-ai-powered-document-filler-745bc11c71c9
+
+Application - https://talkdoc-ai.vercel.app/
 
 ## Overview
 
